@@ -1,0 +1,95 @@
+/*
+ * lattool - An AVR tool that allows to measure interrupt response times
+ *
+ * Copyright (c) OTH Regensburg, 2017
+ *
+ * Authors:
+ *  Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2.  See
+ * the COPYING file in the top-level directory.
+ */
+
+#include <stdbool.h>
+#include <stdio.h>
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+#include "uart.h"
+
+#define INPUT_DDR DDRB
+#define INPUT_PORT PORTB
+#define INPUT_PIN PINB
+#define INPUT PB0 /* ICP1 */
+
+#define OUTPUT_DDR DDRD
+#define OUTPUT_PORT PORTD
+#define OUTPUT PD3
+
+#define OUTPUT_LOW() OUTPUT_PORT &= ~(1 << OUTPUT)
+#define OUTPUT_HIGH() OUTPUT_PORT |= (1 << OUTPUT)
+
+static volatile bool data_rdy;
+static volatile uint16_t latency_ticks;
+
+ISR(TIMER0_COMPA_vect)
+{
+	static unsigned char tick = 0;
+	char buffer[10];
+
+	TCNT0 = 0;
+	tick++;
+
+	if (tick == 6) {
+		if (data_rdy) {
+			data_rdy = false;
+			snprintf(buffer, sizeof(buffer), "%d\n", latency_ticks);
+			uart_puts(buffer);
+		} else {
+			uart_puts("Timeout\n");
+		}
+	} else if (tick == 10) {
+		tick = 0;
+
+		/* fire! */
+		TCNT1 = 0;
+		OUTPUT_HIGH();
+		asm volatile("nop");
+		OUTPUT_LOW();
+	}
+}
+
+ISR(TIMER1_CAPT_vect)
+{
+	latency_ticks = ICR1;
+	data_rdy = true;
+}
+
+int main(void)
+{
+	INPUT_DDR &= ~(1 << INPUT);
+	/* activate pull up */
+	INPUT_PORT |= (1 << INPUT);
+
+	OUTPUT_DDR |= (1 << OUTPUT);
+	OUTPUT_LOW();
+
+	uart_init();
+	uart_puts("Interrupt response Latency Measurement Tool\n");
+
+	/* Timer/Counter 0 gives us a ~100ms beat */
+	TCCR0A = 0;
+	/* 1024 prescaler */
+	TCCR0B = (1 << CS02) | (1 << CS00);
+	/* This gives us a 9.984 ms beat */
+	OCR0A = 156;
+	TIMSK0 = (1 << OCIE0A);
+
+	TCCR1A = 0;
+	/* enable input capture on rising edge, no prescaler */
+	TCCR1B = (1 << ICNC1) | (1 << ICES1) | (1 << CS10);
+	TIMSK1 = (1 << ICIE1);
+
+	for(;;);
+}
