@@ -41,7 +41,7 @@ ISR(TIMER0_COMPA_vect)
 	TCNT0 = 0;
 	tick++;
 
-	if (tick == 6) {
+	if (tick == 20) {
 		if (data_rdy) {
 			data_rdy = false;
 			snprintf(buffer, sizeof(buffer), "%d\n", latency_ticks);
@@ -50,7 +50,7 @@ ISR(TIMER0_COMPA_vect)
 			uart_puts("Timeout\n");
 		}
 		fired = false;
-	} else if (tick == 10) {
+	} else if (tick == 25) {
 		tick = 0;
 
 		/* fire! */
@@ -85,12 +85,12 @@ int main(void)
 	uart_init();
 	uart_puts("Interrupt response Latency Measurement Tool\n");
 
-	/* Timer/Counter 0 gives us a ~100ms beat */
+	/* Timer/Counter 0 gives us a 4ms beat */
 	TCCR0A = 0;
-	/* 1024 prescaler */
-	TCCR0B = (1 << CS02) | (1 << CS00);
-	/* This gives us a 9.984 ms beat */
-	OCR0A = 156;
+	/* 256 prescaler */
+	TCCR0B = (1 << CS02);
+	/* This gives us a 4ms beat */
+	OCR0A = 250;
 	TIMSK0 = (1 << OCIE0A);
 
 	TCCR1A = 0;
