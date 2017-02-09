@@ -30,7 +30,7 @@
 #define OUTPUT_LOW() OUTPUT_PORT &= ~(1 << OUTPUT)
 #define OUTPUT_HIGH() OUTPUT_PORT |= (1 << OUTPUT)
 
-static volatile bool data_rdy;
+static volatile bool data_rdy, spurious_catpure, fired;
 static volatile uint16_t latency_ticks;
 
 ISR(TIMER0_COMPA_vect)
@@ -49,10 +49,12 @@ ISR(TIMER0_COMPA_vect)
 		} else {
 			uart_puts("Timeout\n");
 		}
+		fired = false;
 	} else if (tick == 10) {
 		tick = 0;
 
 		/* fire! */
+		fired = true;
 		TCNT1 = 0;
 		OUTPUT_HIGH();
 		asm volatile("nop");
@@ -62,8 +64,13 @@ ISR(TIMER0_COMPA_vect)
 
 ISR(TIMER1_CAPT_vect)
 {
-	latency_ticks = ICR1;
-	data_rdy = true;
+	if (fired && !data_rdy) {
+		latency_ticks = ICR1;
+		data_rdy = true;
+		fired = false;
+	} else {
+		spurious_catpure = true;
+	}
 }
 
 int main(void)
@@ -91,5 +98,10 @@ int main(void)
 	TCCR1B = (1 << ICNC1) | (1 << ICES1) | (1 << CS10);
 	TIMSK1 = (1 << ICIE1);
 
-	for(;;);
+	for(;;) {
+		if (spurious_catpure) {
+			spurious_catpure = false;
+			uart_puts("spur\n");
+		}
+	}
 }
