@@ -40,6 +40,7 @@ ISR(TIMER0_COMPA_vect)
 
 	TCNT0 = 0;
 	tick++;
+	OUTPUT_LOW();
 
 	if (tick == 20) {
 		if (data_rdy) {
@@ -57,8 +58,6 @@ ISR(TIMER0_COMPA_vect)
 		fired = true;
 		TCNT1 = 0;
 		OUTPUT_HIGH();
-		asm volatile("nop");
-		OUTPUT_LOW();
 	}
 }
 
