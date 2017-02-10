@@ -11,9 +11,9 @@
 
 TARGET = lattool
 
-MCU ?= atmega328
+MCU ?= atmega328p
 F_OSC ?= 16000000
-UART_BAUD ?= 76800
+UART_BAUD ?= 38400
 
 OBJS = main.o uart.o
 
