@@ -44,7 +44,7 @@ ISR(TIMER0_COMPA_vect)
 	if (tick == 20) {
 		if (data_rdy) {
 			data_rdy = false;
-			snprintf(buffer, sizeof(buffer), "%d\n", latency_ticks);
+			snprintf(buffer, sizeof(buffer), "%u\r\n", latency_ticks);
 			uart_puts(buffer);
 		} else {
 			uart_puts("Timeout\r\n");
