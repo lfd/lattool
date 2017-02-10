@@ -98,6 +98,8 @@ int main(void)
 	TCCR1B = (1 << ICNC1) | (1 << ICES1) | (1 << CS10);
 	TIMSK1 = (1 << ICIE1);
 
+	sei();
+
 	for(;;) {
 		if (spurious_catpure) {
 			spurious_catpure = false;
