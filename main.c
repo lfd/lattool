@@ -47,7 +47,7 @@ ISR(TIMER0_COMPA_vect)
 			snprintf(buffer, sizeof(buffer), "%d\n", latency_ticks);
 			uart_puts(buffer);
 		} else {
-			uart_puts("Timeout\n");
+			uart_puts("Timeout\r\n");
 		}
 		fired = false;
 	} else if (tick == 25) {
@@ -83,7 +83,7 @@ int main(void)
 	OUTPUT_LOW();
 
 	uart_init();
-	uart_puts("Interrupt response Latency Measurement Tool\n");
+	uart_puts("Interrupt response Latency Measurement Tool\r\n");
 
 	/* Timer/Counter 0 gives us a 4ms beat */
 	TCCR0A = 0;
@@ -101,7 +101,7 @@ int main(void)
 	for(;;) {
 		if (spurious_catpure) {
 			spurious_catpure = false;
-			uart_puts("spur\n");
+			uart_puts("spur\r\n");
 		}
 	}
 }
