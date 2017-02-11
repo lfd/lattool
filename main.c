@@ -33,6 +33,21 @@
 static volatile bool data_rdy, spurious_catpure, fired;
 static volatile uint16_t latency_ticks;
 
+#define STOP 1
+#define STOPPED 2
+#define RUN 3
+#define RUNNING 4
+static unsigned char status;
+
+void uart_handler(unsigned char in)
+{
+	if (in == 'h') {
+		status = STOP;
+	} else if (in == 's') {
+		status = RUN;
+	}
+}
+
 ISR(TIMER0_COMPA_vect)
 {
 	static unsigned char tick = 0;
@@ -83,6 +98,7 @@ int main(void)
 
 	uart_init();
 	uart_puts("Interrupt response Latency Measurement Tool\r\n");
+	uart_set_recv_handler(uart_handler);
 
 	/* Timer/Counter 0 gives us a 4ms beat */
 	TCCR0A = 0;
@@ -90,12 +106,14 @@ int main(void)
 	TCCR0B = (1 << CS02);
 	/* This gives us a 4ms beat */
 	OCR0A = 250;
-	TIMSK0 = (1 << OCIE0A);
+	TIMSK0 = 0;
+	//TIMSK0 = (1 << OCIE0A);
 
 	TCCR1A = 0;
 	/* enable input capture on rising edge, no prescaler */
 	TCCR1B = (1 << ICNC1) | (1 << ICES1) | (1 << CS10);
-	TIMSK1 = (1 << ICIE1);
+	TIMSK1 = 0;
+	//TIMSK1 = (1 << ICIE1);
 
 	sei();
 
@@ -103,6 +121,20 @@ int main(void)
 		if (spurious_catpure) {
 			spurious_catpure = false;
 			uart_puts("spur\r\n");
+		}
+
+		if (status == STOP) {
+			TIMSK0 = 0;
+			TIMSK1 = 0;
+			status = STOPPED;
+			uart_puts("Stopped measurement...\r\n");
+		} else if (status == RUN) {
+			uart_puts("Starting measurement...\r\n");
+			TCNT0 = 0;
+			TCNT1 = 0;
+			TIMSK0 = (1 << OCIE0A);
+			TIMSK1 = (1 << ICIE1);
+			status = RUNNING;
 		}
 	}
 }
