@@ -11,7 +11,7 @@
  */
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -48,10 +48,17 @@ static void uart_handler(unsigned char in)
 	}
 }
 
+static inline void uart_integer(uint16_t integer)
+{
+	char buffer[10];
+	itoa(integer, buffer, 10);
+	uart_puts(buffer);
+	uart_putc('\n');
+}
+
 ISR(TIMER0_COMPA_vect)
 {
 	static unsigned char tick = 0;
-	char buffer[10];
 
 	TCNT0 = 0;
 	tick++;
@@ -60,8 +67,7 @@ ISR(TIMER0_COMPA_vect)
 	if (tick == 20) {
 		if (data_rdy) {
 			data_rdy = false;
-			snprintf(buffer, sizeof(buffer), "%u\n", latency_ticks);
-			uart_puts(buffer);
+			uart_integer(latency_ticks);
 		} else {
 			uart_puts("TO\n");
 		}
