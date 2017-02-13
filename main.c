@@ -60,10 +60,10 @@ ISR(TIMER0_COMPA_vect)
 	if (tick == 20) {
 		if (data_rdy) {
 			data_rdy = false;
-			snprintf(buffer, sizeof(buffer), "%u\r\n", latency_ticks);
+			snprintf(buffer, sizeof(buffer), "%u\n", latency_ticks);
 			uart_puts(buffer);
 		} else {
-			uart_puts("Timeout\r\n");
+			uart_puts("TO\n");
 		}
 		fired = false;
 	} else if (tick == 25) {
@@ -97,7 +97,7 @@ int main(void)
 	OUTPUT_LOW();
 
 	uart_init();
-	uart_puts("Interrupt response Latency Measurement Tool\r\n");
+	uart_puts("Interrupt response Latency Measurement Tool\n");
 	uart_set_recv_handler(uart_handler);
 
 	/* Timer/Counter 0 gives us a 4ms beat */
@@ -120,16 +120,16 @@ int main(void)
 	for(;;) {
 		if (spurious_catpure) {
 			spurious_catpure = false;
-			uart_puts("spur\r\n");
+			uart_puts("SP\n");
 		}
 
 		if (status == STOP) {
 			TIMSK0 = 0;
 			TIMSK1 = 0;
 			status = STOPPED;
-			uart_puts("Stopped measurement...\r\n");
+			uart_puts("Stopped measurement...\n");
 		} else if (status == RUN) {
-			uart_puts("Starting measurement...\r\n");
+			uart_puts("Starting measurement...\n");
 			TCNT0 = 0;
 			TCNT1 = 0;
 			TIMSK0 = (1 << OCIE0A);
