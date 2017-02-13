@@ -39,7 +39,7 @@ static volatile uint16_t latency_ticks;
 #define RUNNING 4
 static unsigned char status;
 
-void uart_handler(unsigned char in)
+static void uart_handler(unsigned char in)
 {
 	if (in == 'h') {
 		status = STOP;
