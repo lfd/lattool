@@ -10,6 +10,7 @@
  * the COPYING file in the top-level directory.
  */
 
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -17,6 +18,8 @@
 #include <avr/interrupt.h>
 
 #include "uart.h"
+
+#define ARRAY_SIZE(x)  (sizeof(x) / sizeof((x)[0]))
 
 #define NOISE_CANCELER
 
@@ -50,12 +53,42 @@ static volatile uint16_t latency_ticks;
 #define RUNNING 4
 static unsigned char status;
 
+struct setting {
+	unsigned char timeout;
+	unsigned char fire_freq;
+};
+
+static const struct setting settings[] = {
+	/* 10Hz */ {
+		.timeout = 20,
+		.fire_freq = 25,
+	},
+	/* 50Hz */ {
+		.timeout = 3,
+		.fire_freq = 5,
+	},
+};
+
+static const struct setting *setting = &settings[0];
+
 static void uart_handler(unsigned char in)
 {
+	char buffer[10];
+
 	if (in == 'h') {
 		status = STOP;
 	} else if (in == 's') {
 		status = RUN;
+	} else if (isdigit(in)) {
+		in -= '0';
+		if (in < ARRAY_SIZE(settings)) {
+			uart_puts("Setting ");
+			uart_putc(in + 0x30);
+			setting = &settings[in];
+		} else {
+			uart_puts("Invalid setting");
+		}
+		uart_putc('\n');
 	}
 }
 
@@ -75,7 +108,7 @@ ISR(TIMER0_COMPA_vect)
 	tick++;
 	OUTPUT_HIGH();
 
-	if (tick == 20) {
+	if (tick == setting->timeout) {
 		if (data_rdy) {
 			data_rdy = false;
 			uart_integer(latency_ticks);
@@ -83,7 +116,7 @@ ISR(TIMER0_COMPA_vect)
 			uart_puts("TO\n");
 		}
 		fired = false;
-	} else if (tick == 25) {
+	} else if (tick == setting->fire_freq) {
 		tick = 0;
 
 		/* fire! */
