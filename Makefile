@@ -22,7 +22,6 @@ OBJCOPY = avr-objcopy
 AVRDUDE = avrdude
 
 CFLAGS := -g -O2 -mmcu=$(MCU)
-CFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CFLAGS += -Wall -Wextra -Wstrict-prototypes
 CFLAGS += -DF_OSC=$(F_OSC) -DF_CPU=F_OSC -DUART_BAUD=$(UART_BAUD)UL -DMCU=$(MCU)
 
