@@ -51,7 +51,7 @@ static void uart_handler(unsigned char in)
 static inline void uart_integer(uint16_t integer)
 {
 	char buffer[10];
-	itoa(integer, buffer, 10);
+	utoa(integer, buffer, 10);
 	uart_puts(buffer);
 	uart_putc('\n');
 }
