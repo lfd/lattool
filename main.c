@@ -18,6 +18,8 @@
 
 #include "uart.h"
 
+#define NOISE_CANCELER
+
 #define INPUT_DDR DDRB
 #define INPUT_PORT PORTB
 #define INPUT_PIN PINB
@@ -29,6 +31,15 @@
 
 #define OUTPUT_LOW() OUTPUT_PORT &= ~(1 << OUTPUT)
 #define OUTPUT_HIGH() OUTPUT_PORT |= (1 << OUTPUT)
+
+#ifdef NOISE_CANCELER
+#define DELAY_TICKS 3 /* cf. data sheet p. 119 */
+#else
+#define DELAY_TICKS 0
+#endif
+
+/* It takes us two ticks till the signal arrives. Measured with a scope */
+#define ACTIVATION_TICKS 2
 
 static volatile bool data_rdy, spurious_catpure, fired;
 static volatile uint16_t latency_ticks;
@@ -62,7 +73,7 @@ ISR(TIMER0_COMPA_vect)
 
 	TCNT0 = 0;
 	tick++;
-	OUTPUT_LOW();
+	OUTPUT_HIGH();
 
 	if (tick == 20) {
 		if (data_rdy) {
@@ -77,8 +88,12 @@ ISR(TIMER0_COMPA_vect)
 
 		/* fire! */
 		fired = true;
-		TCNT1 = 0;
-		OUTPUT_HIGH();
+#ifdef NOISE_CANCELER
+		TCNT1 = - 1 - ACTIVATION_TICKS - DELAY_TICKS;
+#else
+		TCNT1 = - 1 - ACTIVATION_TICKS;
+#endif
+		OUTPUT_LOW();
 	}
 }
 
@@ -100,7 +115,7 @@ int main(void)
 	INPUT_PORT |= (1 << INPUT);
 
 	OUTPUT_DDR |= (1 << OUTPUT);
-	OUTPUT_LOW();
+	OUTPUT_HIGH();
 
 	uart_init();
 	uart_puts("Interrupt response Latency Measurement Tool\n");
@@ -116,8 +131,11 @@ int main(void)
 	//TIMSK0 = (1 << OCIE0A);
 
 	TCCR1A = 0;
-	/* enable input capture on rising edge, no prescaler */
-	TCCR1B = (1 << ICNC1) | (1 << ICES1) | (1 << CS10);
+	/* enable input capture on falling edge, no prescaler */
+	TCCR1B = (1 << CS10);
+#ifdef NOISE_CANCELER
+	TCCR1B |= (1 << ICNC1);
+#endif
 	TIMSK1 = 0;
 	//TIMSK1 = (1 << ICIE1);
 
