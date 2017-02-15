@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <util/delay.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
@@ -31,6 +32,13 @@
 #define OUTPUT_DDR DDRD
 #define OUTPUT_PORT PORTD
 #define OUTPUT PD3
+
+#define RESET_DDR DDRB
+#define RESET_PORT PORTB
+#define RESET_PIN PB3
+
+#define RESET_HIGH() RESET_PORT |= (1 << RESET_PIN)
+#define RESET_LOW() RESET_PORT &= ~(1 << RESET_PIN)
 
 #define OUTPUT_LOW() OUTPUT_PORT &= ~(1 << OUTPUT)
 #define OUTPUT_HIGH() OUTPUT_PORT |= (1 << OUTPUT)
@@ -71,14 +79,22 @@ static const struct setting settings[] = {
 
 static const struct setting *setting = &settings[0];
 
+static void perform_board_reset(void)
+{
+	RESET_LOW();
+	_delay_ms(100);
+	RESET_HIGH();
+}
+
 static void uart_handler(unsigned char in)
 {
-	char buffer[10];
-
 	if (in == 'h') {
 		status = STOP;
 	} else if (in == 's') {
 		status = RUN;
+	} else if (in == 'r') {
+		uart_puts("Resetting board\n");
+		perform_board_reset();
 	} else if (isdigit(in)) {
 		in -= '0';
 		if (in < ARRAY_SIZE(settings)) {
@@ -149,6 +165,9 @@ int main(void)
 
 	OUTPUT_DDR |= (1 << OUTPUT);
 	OUTPUT_HIGH();
+
+	RESET_HIGH();
+	RESET_DDR |= (1 << RESET_PIN);
 
 	uart_init();
 	uart_puts("Interrupt response Latency Measurement Tool\n");
