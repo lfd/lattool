@@ -35,7 +35,7 @@
 
 #define RESET_DDR DDRB
 #define RESET_PORT PORTB
-#define RESET_PIN PB3
+#define RESET_PIN PB1
 
 #define RESET_HIGH() RESET_PORT |= (1 << RESET_PIN)
 #define RESET_LOW() RESET_PORT &= ~(1 << RESET_PIN)
