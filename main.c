@@ -180,7 +180,6 @@ int main(void)
 	/* This gives us a 4ms beat */
 	OCR0A = 250;
 	TIMSK0 = 0;
-	//TIMSK0 = (1 << OCIE0A);
 
 	TCCR1A = 0;
 	/* enable input capture on falling edge, no prescaler */
@@ -189,7 +188,6 @@ int main(void)
 	TCCR1B |= (1 << ICNC1);
 #endif
 	TIMSK1 = 0;
-	//TIMSK1 = (1 << ICIE1);
 
 	sei();
 
