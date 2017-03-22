@@ -182,7 +182,7 @@ int main(void)
 	TIMSK0 = 0;
 
 	TCCR1A = 0;
-	/* enable input capture on falling edge, no prescaler */
+	/* no prescaler */
 	TCCR1B = (1 << CS10);
 #ifdef NOISE_CANCELER
 	TCCR1B |= (1 << ICNC1);
@@ -204,11 +204,14 @@ int main(void)
 			uart_puts("Stopped measurement...\n");
 		} else if (status == LATENCY_RUN) {
 			uart_puts("Starting measurement...\n");
+			TIMSK0 = 0;
+			TIMSK1 = 0;
 			TCNT0 = 0;
 			TCNT1 = 0;
+			TCCR1B &= ~(1 << ICES1); /* edge select: falling edge */
+			status = LATENCY_RUNNING;
 			TIMSK0 = (1 << OCIE0A);
 			TIMSK1 = (1 << ICIE1);
-			status = LATENCY_RUNNING;
 		}
 	}
 }
