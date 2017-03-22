@@ -59,6 +59,8 @@ static volatile uint16_t capture_ticks;
 #define STOPPED 2
 #define LATENCY_RUN 3
 #define LATENCY_RUNNING 4
+#define LEVEL_RUN 5
+#define LEVEL_RUNNING 6
 static volatile unsigned char status;
 
 struct setting {
@@ -92,6 +94,8 @@ static void uart_handler(unsigned char in)
 		status = STOP;
 	} else if (in == 's') {
 		status = LATENCY_RUN;
+	} else if (in == 'l') {
+		status = LEVEL_RUN;
 	} else if (in == 'r') {
 		uart_puts("Resetting board\n");
 		perform_board_reset();
@@ -159,6 +163,8 @@ ISR(TIMER1_CAPT_vect)
 
 int main(void)
 {
+	uint16_t capture;
+
 	INPUT_DDR &= ~(1 << INPUT);
 	/* activate pull up */
 	INPUT_PORT |= (1 << INPUT);
@@ -212,6 +218,31 @@ int main(void)
 			status = LATENCY_RUNNING;
 			TIMSK0 = (1 << OCIE0A);
 			TIMSK1 = (1 << ICIE1);
+		} else if (status == LEVEL_RUN) {
+			uart_puts("Starting level measurement\n");
+			TIMSK0 = 0;
+			TIMSK1 = 0;
+			status = LEVEL_RUNNING;
+
+			while (status == LEVEL_RUNNING) {
+				TCCR1B = (1 << CS10); /* edge select falling edge, start counter */
+				TIFR1 = (1 << ICF1);
+				/* wait for falling edge or status change */
+				while (!(TIFR1 & (1 << ICF1)) &&
+				       status == LEVEL_RUNNING);
+				capture = ICR1;
+				TCCR1B = (1 << CS10) | (1 << ICES1); /* edge select: rising edge */
+				TIFR1 = (1 << ICF1); /* clear interrupt flag */
+
+				/* wait for rising edge or status change */
+				while (!(TIFR1 & (1 << ICF1)) &&
+				       status == LEVEL_RUNNING);
+				capture = ICR1 - capture;
+				TIFR1 = (1 << ICF1); /* clear interrupt flag */
+
+				if (status == LEVEL_RUNNING)
+					uart_integer(capture);
+			}
 		}
 	}
 }
