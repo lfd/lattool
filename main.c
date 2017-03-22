@@ -53,7 +53,7 @@
 #define ACTIVATION_TICKS 2
 
 static volatile bool data_rdy, spurious_catpure, fired;
-static volatile uint16_t latency_ticks;
+static volatile uint16_t capture_ticks;
 
 #define STOP 1
 #define STOPPED 2
@@ -127,7 +127,7 @@ ISR(TIMER0_COMPA_vect)
 	if (tick == setting->timeout) {
 		if (data_rdy) {
 			data_rdy = false;
-			uart_integer(latency_ticks);
+			uart_integer(capture_ticks);
 		} else {
 			uart_puts("TO\n");
 		}
@@ -149,7 +149,7 @@ ISR(TIMER0_COMPA_vect)
 ISR(TIMER1_CAPT_vect)
 {
 	if (fired && !data_rdy) {
-		latency_ticks = ICR1;
+		capture_ticks = ICR1;
 		data_rdy = true;
 		fired = false;
 	} else {
