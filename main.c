@@ -22,7 +22,7 @@
 
 #define ARRAY_SIZE(x)  (sizeof(x) / sizeof((x)[0]))
 
-#define NOISE_CANCELER
+//#define NOISE_CANCELER
 
 #define INPUT_DDR DDRB
 #define INPUT_PORT PORTB
