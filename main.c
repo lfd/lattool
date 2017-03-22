@@ -57,8 +57,8 @@ static volatile uint16_t latency_ticks;
 
 #define STOP 1
 #define STOPPED 2
-#define RUN 3
-#define RUNNING 4
+#define LATENCY_RUN 3
+#define LATENCY_RUNNING 4
 static unsigned char status;
 
 struct setting {
@@ -91,7 +91,7 @@ static void uart_handler(unsigned char in)
 	if (in == 'h') {
 		status = STOP;
 	} else if (in == 's') {
-		status = RUN;
+		status = LATENCY_RUN;
 	} else if (in == 'r') {
 		uart_puts("Resetting board\n");
 		perform_board_reset();
@@ -204,13 +204,13 @@ int main(void)
 			TIMSK1 = 0;
 			status = STOPPED;
 			uart_puts("Stopped measurement...\n");
-		} else if (status == RUN) {
+		} else if (status == LATENCY_RUN) {
 			uart_puts("Starting measurement...\n");
 			TCNT0 = 0;
 			TCNT1 = 0;
 			TIMSK0 = (1 << OCIE0A);
 			TIMSK1 = (1 << ICIE1);
-			status = RUNNING;
+			status = LATENCY_RUNNING;
 		}
 	}
 }
