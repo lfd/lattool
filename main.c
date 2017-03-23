@@ -203,7 +203,7 @@ int main(void)
 			status = STOPPED;
 			uart_puts("Stopped measurement...\n");
 		} else if (status == LATENCY_RUN) {
-			uart_puts("Starting measurement...\n");
+			uart_puts("Starting latency measurement...\n");
 			TIMSK0 = 0;
 			TIMSK1 = 0;
 			TCNT0 = 0;
