@@ -59,7 +59,7 @@ static volatile uint16_t capture_ticks;
 #define STOPPED 2
 #define LATENCY_RUN 3
 #define LATENCY_RUNNING 4
-static unsigned char status;
+static volatile unsigned char status;
 
 struct setting {
 	unsigned char timeout;
