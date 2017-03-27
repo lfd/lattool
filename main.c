@@ -141,11 +141,7 @@ ISR(TIMER0_COMPA_vect)
 
 		/* fire! */
 		fired = true;
-#ifdef NOISE_CANCELER
 		TCNT1 = - 1 - ACTIVATION_TICKS - DELAY_TICKS;
-#else
-		TCNT1 = - 1 - ACTIVATION_TICKS;
-#endif
 		OUTPUT_LOW();
 	}
 }
