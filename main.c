@@ -46,7 +46,7 @@
 #ifdef NOISE_CANCELER
 #define DELAY_TICKS 3 /* cf. data sheet p. 119 */
 #else
-#define DELAY_TICKS 0
+#define DELAY_TICKS 1
 #endif
 
 /* It takes us two ticks till the signal arrives. Measured with a scope */
