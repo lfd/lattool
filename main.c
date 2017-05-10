@@ -33,12 +33,23 @@
 #define OUTPUT_PORT PORTD
 #define OUTPUT PD3
 
-#define RESET_DDR DDRB
-#define RESET_PORT PORTB
-#define RESET_PIN PB1
+struct reset {
+	volatile unsigned char *ddr;
+	volatile unsigned char *port;
+	unsigned char pin;
+};
 
-#define RESET_HIGH() RESET_PORT |= (1 << RESET_PIN)
-#define RESET_LOW() RESET_PORT &= ~(1 << RESET_PIN)
+static const struct reset resets[] = {
+	{
+		.ddr = &DDRB,
+		.port = &PORTB,
+		.pin = PB1,
+	}, {
+		.ddr = &DDRB,
+		.port = &PORTB,
+		.pin = PB2,
+	},
+};
 
 #define OUTPUT_LOW() OUTPUT_PORT &= ~(1 << OUTPUT)
 #define OUTPUT_HIGH() OUTPUT_PORT |= (1 << OUTPUT)
@@ -81,11 +92,24 @@ static const struct setting settings[] = {
 
 static const struct setting *setting = &settings[0];
 
-static void perform_board_reset(void)
+static void resets_init(void)
 {
-	RESET_LOW();
+	unsigned int i;
+	const struct reset *rst = resets;
+
+	for (i = 0; i < ARRAY_SIZE(resets); i++, rst++) {
+		*rst->port |= (1 << rst->pin);
+		*rst->ddr |= (1 << rst->pin);
+	}
+}
+
+static void perform_board_reset(unsigned int board)
+{
+	const struct reset *rst = resets + board;
+
+	*rst->port &= ~(1 << rst->pin);
 	_delay_ms(100);
-	RESET_HIGH();
+	*rst->port |= (1 << rst->pin);
 }
 
 static void uart_handler(unsigned char in)
@@ -97,8 +121,11 @@ static void uart_handler(unsigned char in)
 	} else if (in == 'l') {
 		status = LEVEL_RUN;
 	} else if (in == 'r') {
-		uart_puts("Resetting board\n");
-		perform_board_reset();
+		uart_puts("Resetting board 0\n");
+		perform_board_reset(0);
+	} else if (in == 't') {
+		uart_puts("Resetting board 1\n");
+		perform_board_reset(1);
 	} else if (isdigit(in)) {
 		in -= '0';
 		if (in < ARRAY_SIZE(settings)) {
@@ -168,8 +195,7 @@ int main(void)
 	OUTPUT_DDR |= (1 << OUTPUT);
 	OUTPUT_HIGH();
 
-	RESET_HIGH();
-	RESET_DDR |= (1 << RESET_PIN);
+	resets_init();
 
 	uart_init();
 	uart_puts("Interrupt response Latency Measurement Tool\n");
